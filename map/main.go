@@ -33,6 +33,42 @@ func main() {
 	}
 	fmt.Print(slice)
 
+	type goObj struct {
+		key      string
+		val      string
+		enabled  int16
+		onlyRead bool
+	}
+
+	object1 := goObj{
+		key:      "name",
+		val:      "fe",
+		enabled:  3,
+		onlyRead: true,
+	}
+
+	map4 := make(map[string]goObj)
+	map4["start"] = object1
+	fmt.Print(map4)
+
+	value, enable := map4["start"]
+	if enable {
+		fmt.Print(value)
+	} else {
+		fmt.Print("no value")
+	}
+
+	if v, enable := map4["start"]; enable {
+		fmt.Println(v)
+	}
+
+	var map5 []map[string]interface{}
+
+	map5 = make([]map[string]interface{}, 2)
+	map5[0] = make(map[string]interface{}, 2)
+	map5[0]["name"] = "baiziyu-fe"
+	map5[0]["email"] = "test@gmail.com"
+
 }
 
 func changeMap(map1 map[string]int) {
