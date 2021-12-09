@@ -40,6 +40,14 @@ func selectControl() {
 	}
 }
 
+func gotoFunc() {
+	temp1 := 0
+GOTO:
+	fmt.Println(temp1)
+	temp1++
+	goto GOTO
+}
+
 func main() {
 	selectControl()
 }
