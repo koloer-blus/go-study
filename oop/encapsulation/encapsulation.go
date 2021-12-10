@@ -6,8 +6,7 @@ import (
 )
 
 type Product struct {
-	name  string
-	price float32
+	name string
 }
 
 func PrintAuthor() {
