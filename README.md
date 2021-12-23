@@ -84,7 +84,8 @@ require (
 2. 入门
 
 - 创建新的服务
-  - `app.Run`：传入需要启动的服务或者监听的Listener
+  - `iris.New()`：返回一个可配置的`iris.Application`实例
+  - `app.Run`：第一个参数为需要启动的服务或者监听的Listener，第二个及之后的参数是可选的`iris.Configurator`配置参数。**在`iris`中每一个核心的模块（视图引擎、websocket、session等）都有一个内部的`iris.Configurator`**
   - `app.Listen`：传入需要监听的端口号
 ```go
 app := iris.New()
@@ -133,8 +134,21 @@ func main() {
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1>Closed</h1>")
     })
-	
-	app.Run(iris.Addr(":8080"), iris.WithoutInterruptHandler)
+	// iris 配置
+	confit := iris.WithConfiguration(iris.Configuration{
+		DisableStartupLog: true,
+		Charset: "UTF-8",
+    })
+	app.Run(iris.Addr(":8080"), config)
 }
 
 ```
+
+3. Router
+
+- Handler Type(请求处理器)
+  - 处理过程：响应Http请求 -> 写入响应头和数据到`Context.ResponseWriter()` -> 返回信号 -> 请求处理完成
+  - 注意事项：
+    - 提前读取`Context.Request().Body`中的数据，因为**在写入`Context.ResponseWriter()`后无法访问`Context.Request().Body`**
+    - Handler不因改变传入的Context
+    - 服务器出现`panic(异常)`，服务器会认为当前的panic的影响与运行的请求无关。会重启当前的panic，并且记录栈追踪日志到服务器错误日志同时关闭连接。
