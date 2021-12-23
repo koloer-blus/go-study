@@ -143,3 +143,12 @@ func main() {
 }
 
 ```
+
+3. Router
+
+- Handler Type(请求处理器)
+  - 处理过程：响应Http请求 -> 写入响应头和数据到`Context.ResponseWriter()` -> 返回信号 -> 请求处理完成
+  - 注意事项：
+    - 提前读取`Context.Request().Body`中的数据，因为**在写入`Context.ResponseWriter()`后无法访问`Context.Request().Body`**
+    - Handler不因改变传入的Context
+    - 服务器出现`panic(异常)`，服务器会认为当前的panic的影响与运行的请求无关。会重启当前的panic，并且记录栈追踪日志到服务器错误日志同时关闭连接。
