@@ -84,7 +84,8 @@ require (
 2. 入门
 
 - 创建新的服务
-  - `app.Run`：传入需要启动的服务或者监听的Listener
+  - `iris.New()`：返回一个可配置的`iris.Application`实例
+  - `app.Run`：第一个参数为需要启动的服务或者监听的Listener，第二个及之后的参数是可选的`iris.Configurator`配置参数。**在`iris`中每一个核心的模块（视图引擎、websocket、session等）都有一个内部的`iris.Configurator`**
   - `app.Listen`：传入需要监听的端口号
 ```go
 app := iris.New()
@@ -133,8 +134,12 @@ func main() {
 	app.Get("/", func(ctx iris.Context) {
 		ctx.HTML("<h1>Closed</h1>")
     })
-	
-	app.Run(iris.Addr(":8080"), iris.WithoutInterruptHandler)
+	// iris 配置
+	confit := iris.WithConfiguration(iris.Configuration{
+		DisableStartupLog: true,
+		Charset: "UTF-8",
+    })
+	app.Run(iris.Addr(":8080"), config)
 }
 
 ```
