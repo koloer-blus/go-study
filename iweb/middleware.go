@@ -8,6 +8,11 @@ import (
 func main() {
 	app := iris.New()
 	app.Get("/", before, middleware, after)
+	app.OnErrorCode(iris.StatusNotFound, notFound)
+}
+
+func notFound(ctx *context.Context) {
+	_, _ = ctx.WriteString("Not found")
 }
 
 func before(ctx *context.Context) {
