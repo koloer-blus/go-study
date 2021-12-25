@@ -189,3 +189,44 @@ func main() {
     - 提前读取`Context.Request().Body`中的数据，因为**在写入`Context.ResponseWriter()`后无法访问`Context.Request().Body`**
     - Handler不因改变传入的Context
     - 服务器出现`panic(异常)`，服务器会认为当前的panic的影响与运行的请求无关。会重启当前的panic，并且记录栈追踪日志到服务器错误日志同时关闭连接。
+- 行为
+  - `iris`默认接受和注册形如`/api/login`的路径路由，并且尾部不带斜杠。
+  - 如果尝试访问`/api/login/`，将会自动永久重定向到`/api/login`
+- API
+  - 参数：(HTTP方法，请求的路径，多个`iris.Handler`)
+```go
+app := iris.New()
+
+app.Handle("GET", "/contact", func(ctx iris.Context) {
+	ctx.HTML("<h1>Hello World</h1>")
+})
+
+app.Get("/", func(ctx iris.Context) {
+	ctx.HTML("<h1>hello</h1>")
+})
+```
+- 路由组（`party`）
+  - 通过对路由的路径前缀进行分组，共享相同的中间件和模板。
+  - 写法1：
+```go
+app := iris.New()
+users := app.Party("/user", handler)
+users.Get("/{id:uint64}/info", handler1)
+user.Get("/login", handler2)
+```
+  - 写法2：
+```go
+app.PartyFunc("/user", func(user, iris.Party) {
+	user.Use(AuthMiddleware)
+	user.Get("/lgoin", handler2)
+})
+```
+- 路径参数
+  - `/user/{id: string}`：`user/*`
+  - `/user/{name: path}` ：`/user/**/*`
+- 中间件（执行过程类似与`nodejs Express`框架）
+  - 中间件仅是一个 Handler 格式的函数 `func(ctx iris.Context)`，当前一个中间件调用 `ctx.Next()` 方法时，此中间件被执行，这可以用作身份验证，即如果请求验证通过，就调用 `ctx.Next()` 来执行该请求剩下链上的处理器，否则触发一个错误响应。
+- 处理`http`错误
+  - Iris 内建支持 HTTP APIs 的错误详情。 
+  - Context.Problem 编写一个 JSON 或者 XML 问题响应，行为完全类似 Context.JSON，但是默认 ProblemOptions.JSON 的缩进是 " "，响应的 Content-type 为 application/problem+json。 
+  - 使用 options.RenderXML 和 XML 字段来改变他的行为，用 application/problem+xml 的文本类型替代。
