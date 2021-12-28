@@ -1,4 +1,4 @@
-package main
+package tempconv0
 
 import "fmt"
 
