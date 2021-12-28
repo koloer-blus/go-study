@@ -230,3 +230,19 @@ app.PartyFunc("/user", func(user, iris.Party) {
   - Iris 内建支持 HTTP APIs 的错误详情。 
   - Context.Problem 编写一个 JSON 或者 XML 问题响应，行为完全类似 Context.JSON，但是默认 ProblemOptions.JSON 的缩进是 " "，响应的 Content-type 为 application/problem+json。 
   - 使用 options.RenderXML 和 XML 字段来改变他的行为，用 application/problem+xml 的文本类型替代。
+
+4. MVC
+
+![](https://www.topgoer.com/static/Iris/mvc.png)
+
+控制器结构体内部的模型(在方法函数中设置，并通过视图渲染)。你可以从一个控制器的方法中返回模型，或者在请求的声明周期中设置一个字段，在同一个请求的生命周期中的另一个方法中返回这个字段。
+
+就像你以前使用的流程一样，MVC 程序有自己的 Router，这是 iris/router.Party 类型的，标准的 iris api Controllers 可以被注册到任何 Party 中，包括子域名，Party 的开始和完成处理器与预期的一样工作。
+
+可选的 BeginRequest（ctx） 函数，用于在方法执行之前执行任何初始化，这对调用中间件或许多方法使用相同的数据收集很有用。
+
+可选的 EndRequest（ctx）函数， 可在执行任何方法之后执行任何终结处理。
+
+递归继承，例如 我们的mvc会话控制器示例具有 Session * sessions.Session 作为字段，由会话管理器的 Start 填充为MVC应用程序的动态依赖项：mvcApp.Register(sessions.New(sessions.Config{Cookie:"iris_session_id"}).Start）
+
+通过控制器方法的输入参数访问动态路径参数，不需要绑定。当你使用 Iris 的默认语法从一个控制器中解析处理器，你需要定义方法的后缀为 By，大写字母是新的子路径。
