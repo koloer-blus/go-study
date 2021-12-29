@@ -121,7 +121,36 @@ o1 = o[1:]
 len(s) == 0
 
 ```
-- `map`：`Go`的`map`类似于`Java`语言中的`HashMap`
+- `map`：
+  - `Go`的`map`类似于`Java`语言中的`HashMap`,一个map就是一个哈希表的引用，map类型可以写为map[K]V，其中K和V分别对应key和value。
+  - 创建map
+    - make
+    - 字面量
+  - 删除元素
+    - delete
+  - map中的元素并不是一个变量，因此我们不能对map的元素进行取址操作
+  - 要想遍历map中全部的key/value对的话，可以使用range风格的for循环实现，和之前的slice遍历语法类似。
+  - Map的迭代顺序是不确定的，并且不同的哈希函数实现可能导致不同的遍历顺序。在实践中，遍历的顺序是随机的，每一次遍历的顺序都不相同。这是故意的，每次都使用随机的遍历顺序可以强制要求程序不会依赖具体的哈希函数实现。如果要按顺序遍历key/value对，我们必须显式地对key进行排序，可以使用sort包的Strings函数对字符串slice进行排序。
+  - map类型的零值是nil
+  - 和slice一样，map之间也不能进行相等比较
+  - 通过key作为索引下标来访问map将产生一个value。如果key在map中是存在的，那么将得到与key对应的value；如果key不存在，那么将得到value对应类型的零值
+```go
+args := map[string]int {
+	"Alice": 25,
+	"Tom": 35
+}
+
+//相当于
+args := make(map[string]int)
+args["Alice"] = 25
+args["Tom"] = 35
+
+//删除
+delete(args, "Alice")
+
+//使用key作为索引下标访问元素
+args, ok := args["Bob"]
+```
 - 指针
   - 一个指针的值是另一个变量的地址。一个指针对应变量在内存中的存储位置。并不是每一个值都会有一个内存地址，但是对于每一个变量必然有对应的内存地址。
   - 对于聚合类型每个成员——比如结构体的每个字段、或者是数组的每个元素——也都是对应一个变量，因此可以被取地址。 
