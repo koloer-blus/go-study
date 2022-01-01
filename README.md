@@ -151,6 +151,79 @@ delete(args, "Alice")
 //使用key作为索引下标访问元素
 args, ok := args["Bob"]
 ```
+- 结构体
+  - 结构体是一种聚合的数据类型，是由零个或多个任意类型的值聚合成的实体。每个值称为结构体的成员。
+  - 字面量语法
+    - 要求以结构体成员定义的顺序为每个结构体成员指定一个字面值。它要求写代码和读代码的人要记住结构体的每个成员的类型和顺序，不过结构体成员有细微的调整就可能导致上述代码不能编译。因此，上述的语法一般只在定义结构体的包内部使用，或者是在较小的结构体中使用
+    - 以成员名字和相应的值来初始化，可以包含部分或全部的成员
+  - 结构体比较
+    - `==`比较结构体的每个成员
+  - 结构体匿名成员的数据类型必须是命名的类型或指向一个命名的类型的指针
+```go
+type Employee struct {
+	ID int
+	Name string
+	Address string
+	DoB time.Time
+	Position    string
+	Salary  int
+	ManagerID int
+}
+var dilbert Employee
+//取地址
+position := &dilbert.Position
+*position = "Senior" + *position
+
+//结构体字面值
+type Point struct {
+	X,Y int
+}
+
+p := Point{1,2}
+
+anim := git.GIF{LoopCount: nframes}
+
+// 匿名变量
+type Point struct {
+	X,Y int
+}
+
+type Circle struct {
+	Center Point
+	Radius  int
+}
+
+type Wheel struct {
+	Circle Circle
+	Spokes int
+}
+
+var w Wheel
+w.Circle.Center.X = 8
+w.Circle.Center.Y = 8
+w.Circle.Radius = 5
+
+
+type Circle struct {
+	Point
+	Radius int
+}
+
+type Wheel struct {
+	Circle
+	Spokes int
+}
+
+var w Wheel
+
+w.X = 8
+w.Y = 9
+w.Radius = 5
+w.Spokes = 20
+
+
+```
+
 - 指针
   - 一个指针的值是另一个变量的地址。一个指针对应变量在内存中的存储位置。并不是每一个值都会有一个内存地址，但是对于每一个变量必然有对应的内存地址。
   - 对于聚合类型每个成员——比如结构体的每个字段、或者是数组的每个元素——也都是对应一个变量，因此可以被取地址。 
