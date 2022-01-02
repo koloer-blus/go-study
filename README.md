@@ -232,6 +232,14 @@ w.Spokes = 20
   - 引用类型实参：切片、map、function、channel等
   - 在Go中，一个函数可以返回多个值。
   - 如果一个函数所有的返回值都有显式的变量名，那么该函数的return语句可以省略操作数
+  - 通常，当函数返回non-nil的error时，其他的返回值是未定义的（undefined），这些未定义的返回值应该被忽略
+  - Go使用控制流机制（如if和return）处理错误
+  - 可变参数
+    - 加上`...`
+    - 
+  - 匿名函数
+    - 当匿名函数需要被递归调用时，我们必须首先声明一个变量（在上面的例子中，我们首先声明了 visitAll），再将匿名函数赋值给这个变量。如果不分成两步，函数字面量无法与visitAll绑定，我们也无法递归调用该匿名函数。
+
 ```go
 func CountWordsAndImages(url string) (words, images int, err error) {
     resp, err := http.Get(url)
@@ -251,6 +259,16 @@ func CountWordsAndImages(url string) (words, images int, err error) {
 //按照返回值列表的次序，返回所有的返回值，在上面的例子中，每一个return语句等价于：
 
 return words, images, err
+
+// 匿名函数
+
+strings.Map(func (r rune) rune {return r +1}, "HAL-9000")
+
+visitAll := func(items []string) {
+// ...
+visitAll(m[item]) // compile error: undefined: visitAll
+// ...
+}
 ```
 - 指针
   - 一个指针的值是另一个变量的地址。一个指针对应变量在内存中的存储位置。并不是每一个值都会有一个内存地址，但是对于每一个变量必然有对应的内存地址。
