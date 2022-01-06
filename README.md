@@ -329,7 +329,24 @@ fmt.println(p == q) //false
 
 当调用一个函数时，会对其每一个参数值进行拷贝
 
-7. Go语言的自动垃圾收集器
+6. 接口
+
+> 在Go语言中还存在着另外一种类型：接口类型。接口类型是一种抽象的类型
+
+```go
+type Writer interface {
+    // Write writes len(p) bytes from p to the underlying data stream.
+    // It returns the number of bytes written from p (0 <= n <= len(p))
+    // and any error encountered that caused the write to stop early.
+    // Write must return a non-nil error if it returns n < len(p).
+    // Write must not modify the slice data, even temporarily.
+    //
+    // Implementations must not retain p.
+    Write(p []byte) (n int, err error)
+}
+```
+
+8. Go语言的自动垃圾收集器
 > 从每个包级的变量和每个当前运行函数的每一个局部变量开始，通过指针或引用的访问路径遍历，是否可以找到该变量。如果不存在这样的访问路径，那么说明该变量是不可达的，也就是说它是否存在并不会影响程序后续的计算结果。
 
 
