@@ -346,7 +346,44 @@ type Writer interface {
 }
 ```
 
-8. Go语言的自动垃圾收集器
+7. Goroutines
+
+> 每一个并发的执行单元叫做goroutine，这里可以将goroutine类看作一个线程
+
+当程序启动时，主函数会在一个单独的goroutine中运行，我们称为`main goroutine`。
+
+8. channels 并发体之间的通信机制
+
+Channel还支持close操作，用于关闭channel，随后对基于该channel的任何发送操作都将导致panic异常
+
+一个channel有发送和接收两个机制，发送和接受都是用`<-`运算符。
+- 发送语句中用来分割`channel`和要发送的值
+- 接受语句中写在`channel`对象之前
+
+以最简单方式调用make函数创建的是一个无缓存的channel，但是我们也可以指定第二个整型参数，对应channel的容量。如果channel的容量大于零，那么该channel就是带缓存的channel。
+
+- 不带缓存的channels（同步channels）
+  - 一个基于无缓存Channels的发送操作将导致发送者goroutine阻塞，直到另一个goroutine在相同的Channels上执行接收操作，当发送的值通过Channels成功传输之后，两个goroutine可以继续执行后面的语句。反之，如果接收操作先发生，那么接收者goroutine也将阻塞，直到有另一个goroutine在相同的Channels上执行发送操作。
+  - 基于无缓存Channels的发送和接收操作将导致两个goroutine做一次同步操作。
+  - > 基于channels发送消息有两个重要方面。首先每个消息都有一个值，但是有时候通讯的事实和发生的时刻也同样重要。当我们更希望强调通讯发生的时刻时，我们将它称为消息事件。有些消息事件并不携带额外的信息，它仅仅是用作两个goroutine之间的同步，这时候我们可以用struct{}空结构体作为channels元素的类型，虽然也可以使用bool或int类型实现同样的功能，done <- 1语句也比done <- struct{}{}更短。
+- 串联的channels(pipeline)
+  - 
+- 带缓存的channels
+
+
+````go
+ch := make(chan int)
+
+ch <- x  //send
+x = <- ch //receive
+<-ch //receive statement
+
+ch = make (chan int)
+ch = make(chan int, 0)
+ch = make(chan int, 3)
+````
+
+10. Go语言的自动垃圾收集器
 > 从每个包级的变量和每个当前运行函数的每一个局部变量开始，通过指针或引用的访问路径遍历，是否可以找到该变量。如果不存在这样的访问路径，那么说明该变量是不可达的，也就是说它是否存在并不会影响程序后续的计算结果。
 
 
