@@ -367,8 +367,17 @@ Channel还支持close操作，用于关闭channel，随后对基于该channel的
   - 基于无缓存Channels的发送和接收操作将导致两个goroutine做一次同步操作。
   - > 基于channels发送消息有两个重要方面。首先每个消息都有一个值，但是有时候通讯的事实和发生的时刻也同样重要。当我们更希望强调通讯发生的时刻时，我们将它称为消息事件。有些消息事件并不携带额外的信息，它仅仅是用作两个goroutine之间的同步，这时候我们可以用struct{}空结构体作为channels元素的类型，虽然也可以使用bool或int类型实现同样的功能，done <- 1语句也比done <- struct{}{}更短。
 - 串联的channels(pipeline)
-  - 
+  ![](https://books.studygolang.com/gopl-zh/images/ch8-01.png) 
+- 单方向的Channel
+  - 当一个channel作为一个函数参数时，它一般总是被专门用于只发送或者只接收。
 - 带缓存的channels
+  - 带缓存的Channel内部持有一个元素队列。队列的最大容量是在调用make函数创建channel时通过第二个参数指定的。
+  - ![](https://books.studygolang.com/gopl-zh/images/ch8-02.png)
+  - 向缓存Channel的发送操作就是向内部缓存队列的尾部插入元素，接收操作则是从队列的头部删除元素。如果内部缓存队列是满的，那么发送操作将阻塞直到因另一个goroutine执行接收操作而释放了新的队列空间。相反，如果channel是空的，接收操作将阻塞直到有另一个goroutine执行发送操作而向队列插入元素。
+
+8. 并发的循环
+
+- 
 
 
 ````go
