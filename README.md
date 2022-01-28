@@ -533,51 +533,62 @@ visitAll(m[item]) // compile error: undefined: visitAll
 
 当调用一个函数时，会对其每一个参数值进行拷贝
 
+## 接口
 
+> 在Go语言中还存在着另外一种类型：接口类型。接口类型是一种抽象的类型
 
-### 基础
+即使没有接口也能运行，但是当存在接口时，会隐式实现接口，让接口给类提供约束。
 
-2. 名词解释
+Go中不仅结构体之间可以嵌套，接口之间也可以嵌套。接口与接口嵌套形成了新的接口，只要接口的所有方法被实现，则这个接口中所有嵌套接口的方法均可以被调用。
 
-- 包（`package`）:  一个包由位于单个目录下的一个或多个.go源代码文件组成，目录定义包的作用；
-  - `main`包：定义一个可以独立执行的函数，而不是一个库，是程序的入口
-  - 每一个包都有对应独立的命名空间
-  - 通过名字大小写控制变量的私有性（变量名小写字母开头代表小写）
-  - 包的第一句注释应当是报的功能概要说明
-  - 包的初始化可以使用`func init() {}`来执行，该函数同时不支持被调用或引用，在程序开始执行时按照声明顺序依次调用
-
-3. 程序结构
-
-- `type`：类型
-  - 对于每一个类型T，都有一个对应的类型转换操作T(x)，用于将x转为T类型（译注：如果T是指针类型，可能会需要用小括弧包装T，比如`(*int)(0)`）。只有当两个类型的底层基础类型相同时，才允许这种转型操作，或者是两者都是指向相同底层结构的指针类型，这些转换只改变类型而不会影响值本身。
-  - 数值类型之间的转型也是允许的，并且在字符串和一些特定类型的slice之间也是可以转换的，在下一章我们会看到这样的例子。这类转换可能改变值的表现。例如，将一个浮点数转为整数将丢弃小数部分，将一个字符串转为[]byte类型的slice将拷贝一个字符串数据的副本。在任何情况下，运行时不会发生转换失败的错误（错误只会发生在编译阶段）。
-
-- JSON
-  - 结构体的成员Tag可以是任意的字符串面值，但是通常是一系列用空格分隔的key:"value"键值对序列；因为值中含有双引号字符，因此成员Tag一般用原生字符串面值的形式书写
-  - 编码的逆操作是解码，对应将JSON数据解码为Go语言的数据结构，Go语言中一般叫unmarshaling，通过json.Unmarshal函数完成。下面的代码将JSON格式的电影数据解码为一个结构体slice，结构体中只有Title成员。通过定义合适的Go语言数据结构，我们可以选择性地解码JSON中感兴趣的成员。当Unmarshal函数调用返回，slice将被只含有Title信息的值填充，其它JSON成员将被忽略。
-
-5. `Printf`动词展示
-
-```
-%d  十进制整数
-%x,%o,%b  十六进制，八进制，二进制
-%f,%g,%e  浮点数
-%t  bool
-%c  char
-%s  string
-%q  string or char
-%v  变量的默认形式
-%T  变量的类型
-%%  %  
+```go
+type Writer interface {
+    // Write writes len(p) bytes from p to the underlying data stream.
+    // It returns the number of bytes written from p (0 <= n <= len(p))
+    // and any error encountered that caused the write to stop early.
+    // Write must return a non-nil error if it returns n < len(p).
+    // Write must not modify the slice data, even temporarily.
+    //
+    // Implementations must not retain p.
+    Write(p []byte) (n int, err error)
+}
 ```
 
-7. Goroutines
+### 空接口
+
+空接口的类型和可比较性：
+
+| 类型   | 说明                                               |
+| ------ | -------------------------------------------------- |
+| map    | 不可比较，会发生宕机错误                           |
+| 切片   | 不可比较，会发生宕机错误                           |
+| 通道   | 可比较，必须由同一个make生成，即同一个通道才是true |
+| 数组   | 可比较，编译期即可知道是否一致                     |
+| 结构体 | 可比较，可诸葛比较结构体的值                       |
+| 函数   | 可比较                                             |
+
+### 接口类型转换
+
+#### 断言
+
+在接口定义时，其类型已经确定，因为接口的本质是方法签名的集合，如果两个接口的方法签名结合相同（顺序可以不同），则这2个接口之间不需要强制类型转换就可以相互赋值，因为go编译器在校验接口是否能赋值时，比较的是二者的方法集。
+
+接口类型无法直接访问其具体实现类的成员，需要使用断言（type assertions），对接口的类型进行判断，类型断言格式
+
+```go
+t, ok := i.(T)		// 安全写法：如果接口未实现接口，将会把ok掷为false，t掷为T类型的0值
+
+```
+
+# 并发编程
+
+## Goroutines
 
 > 每一个并发的执行单元叫做goroutine，这里可以将goroutine类看作一个线程
 
 当程序启动时，主函数会在一个单独的goroutine中运行，我们称为`main goroutine`。
 
-8. channels 并发体之间的通信机制
+## channels 并发体之间的通信机制
 
 Channel还支持close操作，用于关闭channel，随后对基于该channel的任何发送操作都将导致panic异常
 
@@ -587,23 +598,26 @@ Channel还支持close操作，用于关闭channel，随后对基于该channel的
 
 以最简单方式调用make函数创建的是一个无缓存的channel，但是我们也可以指定第二个整型参数，对应channel的容量。如果channel的容量大于零，那么该channel就是带缓存的channel。
 
-- 不带缓存的channels（同步channels）
-  - 一个基于无缓存Channels的发送操作将导致发送者goroutine阻塞，直到另一个goroutine在相同的Channels上执行接收操作，当发送的值通过Channels成功传输之后，两个goroutine可以继续执行后面的语句。反之，如果接收操作先发生，那么接收者goroutine也将阻塞，直到有另一个goroutine在相同的Channels上执行发送操作。
-  - 基于无缓存Channels的发送和接收操作将导致两个goroutine做一次同步操作。
-  - > 基于channels发送消息有两个重要方面。首先每个消息都有一个值，但是有时候通讯的事实和发生的时刻也同样重要。当我们更希望强调通讯发生的时刻时，我们将它称为消息事件。有些消息事件并不携带额外的信息，它仅仅是用作两个goroutine之间的同步，这时候我们可以用struct{}空结构体作为channels元素的类型，虽然也可以使用bool或int类型实现同样的功能，done <- 1语句也比done <- struct{}{}更短。
-- 串联的channels(pipeline)
-  ![](https://books.studygolang.com/gopl-zh/images/ch8-01.png) 
-- 单方向的Channel
-  
-  - 当一个channel作为一个函数参数时，它一般总是被专门用于只发送或者只接收。
-- 带缓存的channels
-  - 带缓存的Channel内部持有一个元素队列。队列的最大容量是在调用make函数创建channel时通过第二个参数指定的。
-  - ![](https://books.studygolang.com/gopl-zh/images/ch8-02.png)
-  - 向缓存Channel的发送操作就是向内部缓存队列的尾部插入元素，接收操作则是从队列的头部删除元素。如果内部缓存队列是满的，那么发送操作将阻塞直到因另一个goroutine执行接收操作而释放了新的队列空间。相反，如果channel是空的，接收操作将阻塞直到有另一个goroutine执行发送操作而向队列插入元素。
+### 不带缓存的channels（同步channels）
 
-8. 并发的循环
+- 一个基于无缓存Channels的发送操作将导致发送者goroutine阻塞，直到另一个goroutine在相同的Channels上执行接收操作，当发送的值通过Channels成功传输之后，两个goroutine可以继续执行后面的语句。反之，如果接收操作先发生，那么接收者goroutine也将阻塞，直到有另一个goroutine在相同的Channels上执行发送操作。
+- 基于无缓存Channels的发送和接收操作将导致两个goroutine做一次同步操作。
+- > 基于channels发送消息有两个重要方面。首先每个消息都有一个值，但是有时候通讯的事实和发生的时刻也同样重要。当我们更希望强调通讯发生的时刻时，我们将它称为消息事件。有些消息事件并不携带额外的信息，它仅仅是用作两个goroutine之间的同步，这时候我们可以用struct{}空结构体作为channels元素的类型，虽然也可以使用bool或int类型实现同样的功能，done <- 1语句也比done <- struct{}{}更短。
 
-- 
+### 串联的channels(pipeline)
+![](https://books.studygolang.com/gopl-zh/images/ch8-01.png) 
+
+### 单方向的Channel
+
+- 当一个channel作为一个函数参数时，它一般总是被专门用于只发送或者只接收。
+
+### 带缓存的channels
+
+- 带缓存的Channel内部持有一个元素队列。队列的最大容量是在调用make函数创建channel时通过第二个参数指定的。
+- ![](https://books.studygolang.com/gopl-zh/images/ch8-02.png)
+- 向缓存Channel的发送操作就是向内部缓存队列的尾部插入元素，接收操作则是从队列的头部删除元素。如果内部缓存队列是满的，那么发送操作将阻塞直到因另一个goroutine执行接收操作而释放了新的队列空间。相反，如果channel是空的，接收操作将阻塞直到有另一个goroutine执行发送操作而向队列插入元素。
+
+#### 并发的循环
 
 
 ````go
@@ -618,7 +632,8 @@ ch = make(chan int, 0)
 ch = make(chan int, 3)
 ````
 
-10. Go语言的自动垃圾收集器
+## Go语言的自动垃圾收集器
+
 > 从每个包级的变量和每个当前运行函数的每一个局部变量开始，通过指针或引用的访问路径遍历，是否可以找到该变量。如果不存在这样的访问路径，那么说明该变量是不可达的，也就是说它是否存在并不会影响程序后续的计算结果。
 
 
