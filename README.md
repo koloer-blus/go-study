@@ -225,8 +225,45 @@ func copy(dst, src []Type) int
 > slice不支持比较运算符的原因
 >
 > - 第一个原因，一个slice的元素是间接引用的，一个slice甚至可以包含自身（当slice声明为[]interface{}时，slice的元素可以是自身）。虽然有很多办法处理这种情形，但是没有一个是简单有效的。 
+>- 第二个原因，因为slice的元素是间接引用的，一个固定的slice值（指slice本身的值，不是元素的值）在不同的时刻可能包含不同的元素，因为底层数组的元素可能会被修改。而例如Go语言中map的key只做简单的浅拷贝，它要求key在整个生命周期内保持不变性（例如slice扩容，就会导致其本身的值/地址变化）。而用深度相等判断的话，显然在map的key这种场合不合适。对于像指针或chan之类的引用类型，==相等测试可以判断两个是否是引用相同的对象。一个针对slice的浅相等测试的==操作符可能是有一定用处的，也能临时解决map类型的key问题，但是slice和数组不同的相等测试行为会让人困惑。因此，安全的做法是直接禁止slice之间的比较操作。
+
+### 集合
+
+#### 创建
+
+```go
+m := map[string]int{"a": 1}
+m1 := make(map[string]int)
+```
+
+- map是无序的，每次打印出来的map都会不一样，它不能通过index获取，而必须通过key获取,在实践中，遍历的顺序是随机的，每一次遍历的顺序都不相同。这是故意的，每次都使用随机的遍历顺序可以强制要求程序不会依赖具体的哈希函数实现。如果要按顺序遍历key/value对，我们必须显式地对key进行排序，可以使用sort包的Strings函数对字符串slice进行排序。
+- map的长度是不固定的，也就是和slice一样，也是一种引用类型
+- 内置的len函数同样适用于map，返回map拥有的key的数量
+- go没有提供清空元素的方法，可以重新make一个新的map，不用担心垃圾回收的效率，因为go中并行垃圾回收效率比写一个清空函数高效很多
+- map和其他基本型别不同，它不是thread-safe，在多个go-routine存取时，必须使用mutex lock机制
+
+#### 并发的集合处理
+
+> 因为用两个并发程序不断的对map进行读和写，产生了竞态问题。map内部会对这种错误进行检查并提前发现。
 >
-> - 第二个原因，因为slice的元素是间接引用的，一个固定的slice值（指slice本身的值，不是元素的值）在不同的时刻可能包含不同的元素，因为底层数组的元素可能会被修改。而例如Go语言中map的key只做简单的浅拷贝，它要求key在整个生命周期内保持不变性（例如slice扩容，就会导致其本身的值/地址变化）。而用深度相等判断的话，显然在map的key这种场合不合适。对于像指针或chan之类的引用类型，==相等测试可以判断两个是否是引用相同的对象。一个针对slice的浅相等测试的==操作符可能是有一定用处的，也能临时解决map类型的key问题，但是slice和数组不同的相等测试行为会让人困惑。因此，安全的做法是直接禁止slice之间的比较操作。
+> Go内置的map只有读是线程安全的，读写是线程不安全的。
+
+在`go1.9`版本中提供了更高效并发安全的`sync.Map`。
+
+- Store表示存储
+- Load表示获取
+- Delete表示删除
+
+```go
+var scene sync.Map
+scene.Store("name", "Tom")
+scene.Range(func (k, v interface{}) bool {
+	fmt.println(k, v)
+	return true
+})
+```
+
+`sync.Map`为了并发安全。损失了一定的性能。
 
 ### 变量声明
 
@@ -419,127 +456,7 @@ onExit:
 - `type`：类型
   - 对于每一个类型T，都有一个对应的类型转换操作T(x)，用于将x转为T类型（译注：如果T是指针类型，可能会需要用小括弧包装T，比如`(*int)(0)`）。只有当两个类型的底层基础类型相同时，才允许这种转型操作，或者是两者都是指向相同底层结构的指针类型，这些转换只改变类型而不会影响值本身。
   - 数值类型之间的转型也是允许的，并且在字符串和一些特定类型的slice之间也是可以转换的，在下一章我们会看到这样的例子。这类转换可能改变值的表现。例如，将一个浮点数转为整数将丢弃小数部分，将一个字符串转为[]byte类型的slice将拷贝一个字符串数据的副本。在任何情况下，运行时不会发生转换失败的错误（错误只会发生在编译阶段）。
-- `func`：函数实体
 
- ```go
-&      位运算 AND
-|      位运算 OR
-^      位运算 XOR
-&^     位清空（AND NOT）
-<<     左移
->>     右移
- ```
-```go
-o := [...]string{1: "A", 2: 'B', 3: "C", 4: "D", 5: "E"}
-o1 = o[1:4]
-o1 = o[1:]
-
-//判断数组为空
-len(s) == 0
-
-```
-- `map`：
-  - `Go`的`map`类似于`Java`语言中的`HashMap`,一个map就是一个哈希表的引用，map类型可以写为map[K]V，其中K和V分别对应key和value。
-  - 创建map
-    - make
-    - 字面量
-  - 删除元素
-    - delete
-  - map中的元素并不是一个变量，因此我们不能对map的元素进行取址操作
-  - 要想遍历map中全部的key/value对的话，可以使用range风格的for循环实现，和之前的slice遍历语法类似。
-  - Map的迭代顺序是不确定的，并且不同的哈希函数实现可能导致不同的遍历顺序。在实践中，遍历的顺序是随机的，每一次遍历的顺序都不相同。这是故意的，每次都使用随机的遍历顺序可以强制要求程序不会依赖具体的哈希函数实现。如果要按顺序遍历key/value对，我们必须显式地对key进行排序，可以使用sort包的Strings函数对字符串slice进行排序。
-  - map类型的零值是nil
-  - 和slice一样，map之间也不能进行相等比较
-  - 通过key作为索引下标来访问map将产生一个value。如果key在map中是存在的，那么将得到与key对应的value；如果key不存在，那么将得到value对应类型的零值
-```go
-args := map[string]int {
-	"Alice": 25,
-	"Tom": 35
-}
-
-//相当于
-args := make(map[string]int)
-args["Alice"] = 25
-args["Tom"] = 35
-
-//删除
-delete(args, "Alice")
-
-//使用key作为索引下标访问元素
-args, ok := args["Bob"]
-```
-- 结构体
-  - 结构体是一种聚合的数据类型，是由零个或多个任意类型的值聚合成的实体。每个值称为结构体的成员。
-  - 字面量语法
-    - 要求以结构体成员定义的顺序为每个结构体成员指定一个字面值。它要求写代码和读代码的人要记住结构体的每个成员的类型和顺序，不过结构体成员有细微的调整就可能导致上述代码不能编译。因此，上述的语法一般只在定义结构体的包内部使用，或者是在较小的结构体中使用
-    - 以成员名字和相应的值来初始化，可以包含部分或全部的成员
-  - 结构体比较
-    - `==`比较结构体的每个成员
-  - 结构体匿名成员的数据类型必须是命名的类型或指向一个命名的类型的指针
-```go
-type Employee struct {
-	ID int
-	Name string
-	Address string
-	DoB time.Time
-	Position    string
-	Salary  int
-	ManagerID int
-}
-var dilbert Employee
-//取地址
-position := &dilbert.Position
-*position = "Senior" + *position
-
-//结构体字面值
-type Point struct {
-	X,Y int
-}
-
-p := Point{1,2}
-
-anim := git.GIF{LoopCount: nframes}
-
-// 匿名变量
-type Point struct {
-	X,Y int
-}
-
-type Circle struct {
-	Center Point
-	Radius  int
-}
-
-type Wheel struct {
-	Circle Circle
-	Spokes int
-}
-
-var w Wheel
-w.Circle.Center.X = 8
-w.Circle.Center.Y = 8
-w.Circle.Radius = 5
-
-
-type Circle struct {
-	Point
-	Radius int
-}
-
-type Wheel struct {
-	Circle
-	Spokes int
-}
-
-var w Wheel
-
-w.X = 8
-w.Y = 9
-w.Radius = 5
-w.Spokes = 20
-
-
-```
 - JSON
   - 结构体的成员Tag可以是任意的字符串面值，但是通常是一系列用空格分隔的key:"value"键值对序列；因为值中含有双引号字符，因此成员Tag一般用原生字符串面值的形式书写
   - 编码的逆操作是解码，对应将JSON数据解码为Go语言的数据结构，Go语言中一般叫unmarshaling，通过json.Unmarshal函数完成。下面的代码将JSON格式的电影数据解码为一个结构体slice，结构体中只有Title成员。通过定义合适的Go语言数据结构，我们可以选择性地解码JSON中感兴趣的成员。当Unmarshal函数调用返回，slice将被只含有Title信息的值填充，其它JSON成员将被忽略。
